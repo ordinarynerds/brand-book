@@ -41,10 +41,10 @@ white flex column.
   spread title — this is the accent's persistent through-line. The *one* deliberate
   accent moment per spread is separate (a mascot tile, the coral card, a callout rule).
 
-Duplicating spread 1 gives you the header + footer + divider for free. For each new
-spread: rename artboard, `set_text_content` the section label + page number, delete
-the cloned body children, then build fresh. Grab the cloned node ids from the
-`descendantIdMap` returned by `duplicate_nodes` (source→clone map).
+Reuse the chrome across all spreads — a shared class/partial in HTML, or duplicate the
+first artboard in Paper. Only the section label and page number change per spread. The
+mechanics live in your build reference (`build-html.md` / `build-paper.md`); this file
+is medium-neutral.
 
 ## Per-spread layout & copy
 

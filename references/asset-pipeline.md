@@ -86,11 +86,13 @@ L.append('</svg>')
 open('construction-grid.svg','w').write("\n".join(L))
 ```
 
-## Paper placement notes
+## Placement (per medium)
 
-- Local images: `<img src="paper-asset:///absolute/path.svg">` (three slashes + the
-  absolute path). Paper imports it as a Rectangle with an image fill.
-- To swap an already-placed image (e.g. after re-slicing), `write_html` with
-  `mode:"replace"` on the image node — same filename re-reads the updated file.
-- Size mascot/icon slices by **height** with per-glyph width (from slice-row) so a
-  fixed-height row stays uniform; sizing by width makes tall glyphs shrink.
+- Size mascot/icon slices by **height** with per-glyph width (from `slice-row`) so a
+  fixed-height row stays uniform; sizing by width makes tall glyphs shrink. This holds
+  in both mediums.
+- **HTML** (`build-html.md`): inline the marks as `<svg>` or as
+  `<img src="data:image/svg+xml;base64,…">`; author with relative paths and let
+  `scripts/embed_assets.py` do the embedding.
+- **Paper** (`build-paper.md`): `<img src="paper-asset:///absolute/path.svg">` (three
+  slashes + absolute path); swap a placed image with `write_html` `mode:"replace"`.
