@@ -119,3 +119,19 @@ Calm, plain, declarative, confident. Short sentences. No exclamation, no jokes, 
 hype — even for a playful brand, the *book* is the calm artifact. Derive principle
 and manifesto copy from the brand's actual values/voice, not filler. If the brand
 runs a separate loud voice, it appears only as *quoted samples* on spread 10.
+
+## Optional content — scale to the brand
+
+Add only when the brand has it; don't pad. From `brand.json`:
+
+- **Mission / Vision / Values / Audience** — fold `mission`/`vision`/`audience` into the
+  intro spread; `values` become the Brand Principles.
+- **Print values** — add CMYK (+ Pantone) rows to the core colour cards for brands that
+  print.
+- **Iconography** — a small panel (source, stroke, grid, radius, fill/outline) on the
+  Logo or Applications spread if `iconography` is set.
+- **Social sizes** — in Applications, a mono list of the real avatar/cover dimensions
+  (e.g. X 1500×500, LinkedIn 1128×191) beside the banner mock.
+- **Quick-reference card** — an optional final (or cover) card: name, the two or three
+  key colours (hex), the fonts, `logo.minSize`/`clearSpace`, and the top `voice.weAre`
+  words. A one-glance cheat-sheet someone can screenshot.

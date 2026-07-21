@@ -1,130 +1,152 @@
 # Generating the companion brand skill
 
-Every brand book ships with a `<brand>-brand/` skill so a coding agent can apply and
-update the brand in the product's codebase. It is the operational half of the
-deliverable — the book is the reference, the skill is the API.
+Every brand book ships with a `<brand>-brand/` skill so a coding agent can apply,
+enforce, and update the brand in the product's codebase. It is the operational half of
+the deliverable — the book is the reference, the skill is the API. It is generated from
+`brand.json` (`brand-json.md`), the single source of truth.
 
-Create it inside the brand's own repo at `.claude/skills/<brand>-brand/` (so it
-travels with the code), or as a sibling of `brand-book/`. Mirror the shape of a
-finished one if you have it.
+Create it inside the brand's own repo at `.claude/skills/<brand>-brand/` (so it travels
+with the code). Mirror a finished one if you have it.
 
 ## Structure
 
 ```
 <brand>-brand/
   SKILL.md
-  assets/            # the real, final SVGs — the durable home for the marks
-    wordmark-ink.svg  wordmark-white.svg
-    mark-ink.svg      mark-white.svg  mark-accent.svg
-    ...(mascot slices if any)
+  brand.json                 # the source of truth (brand-json.md)
+  tokens.css                 # :root { --color-<role> … }  — generated from brand.json
+  tokens.json                # { color, font, radius, spacing } — generated
+  assets/                    # the real, final SVGs (durable home for the marks)
+  hooks/enforce.sh           # OPTIONAL brand-enforcement hook (see below)
 ```
 
-Copy the finalized SVGs from the build into `assets/` (do not reference a scratchpad).
-Keep the file small: one SKILL.md is usually enough; only split into `references/` if
-tokens/voice/usage get long.
+Ship the **real token files**, not just paste-in blocks — `tokens.css` (`:root` +
+Tailwind `@theme`) and `tokens.json`, both derived from `brand.json.colors` (→
+`--color-<role>`), `typography`, and `layout`. Regenerate them whenever `brand.json`
+changes. Copy the finalized SVGs into `assets/`. Keep SKILL.md the human-readable index.
 
-## What the skill must contain
+## What SKILL.md must contain
 
-1. **Frontmatter** — `name: <brand>-brand`, and a `description` packed with triggers:
-   the brand name, "apply/update `<brand>` brand", "brand colors/fonts/tokens",
-   "on-brand", "style this like `<brand>`". Add `metadata.surface: engineering`.
-2. **Tokens, paste-ready** — the exact token set from the book, as BOTH a vanilla
-   `:root{}` block and a Tailwind v4 `@theme{}` block, with the role of each.
-3. **Applying in code** — how to wire tokens into the actual stack (CSS variables /
-   Tailwind theme / design-token file), which token is text vs bg vs accent, and the
-   accent-once rule restated for UI.
-4. **Logo usage** — which asset for which context, clear space, min size, the reversal
-   rules, and the don'ts — pointing at the files in `assets/`.
-5. **Voice & tone** — the register(s) and the boundary rule, with one calm and (if it
-   exists) one loud example. Cross-link a separate social-voice skill if there is one.
-6. **Accessibility** — the passing text/bg pairs and the accent-as-text fallback.
-7. **Update protocol** — how an agent should *change* the brand safely: edit token
-   values (not names), regenerate marks with `brand-book`'s `svgkit`, keep the book
-   and the skill in sync, never introduce a second accent.
+1. **Frontmatter** — `name: <brand>-brand`; `description` packed with triggers (the
+   brand name, "apply/update `<brand>` brand", "brand colors/fonts/tokens", "on-brand",
+   "style this like `<brand>`"); `metadata.surface: engineering`.
+2. **Tokens** — point at `tokens.css`/`tokens.json`; restate the role of each colour
+   and the accent-once rule.
+3. **Applying in code — two cases:**
+   - *New surface:* use the role tokens directly (background/foreground/accent…).
+   - *Existing codebase:* **map its tokens onto the brand roles by evidence, not by
+     value.** Infer each source token's role from usage (name, position — bg/text/
+     border/focus-ring, contrast pairing, reuse across primary buttons/active nav).
+     Map only when the evidence is role-based; leave ambiguous ones **unmatched for a
+     human to review** — never silently collapse two source tokens onto one brand token
+     or invent a token. (Record collisions/unmatched explicitly.)
+4. **Logo & mascot usage** — which asset for which context, clear space, min size,
+   reversal rules, the don'ts — pointing at `assets/`.
+5. **Voice & tone** (the enforceable part — below).
+6. **Accessibility** — the passing text/bg pairs + the accent-as-text fallback.
+7. **Update protocol** — edit `brand.json` values (never role names), regenerate
+   tokens + marks, keep book and skill in sync, never add a second accent.
 
-Keep it declarative and specific. It is loaded into a coding agent's context to make
-on-brand decisions — no narrative, just the rules and the values.
+## Voice & tone — make it enforceable
 
-## Template (fill the {{...}} and delete anything that doesn't apply)
+Voice is the personality (constant); tone flexes by context. Encode both so an agent
+can *apply* them, not just admire them:
 
-`{{brand}}` is whoever the brand belongs to — a company, a product, or you.
+- **We Are / We Are Not** table (4+ rows) — the identity anchor, from
+  `brand.json.voice.weAre/weAreNot`.
+- **Vocabulary** — words to `use` / words to `avoid`.
+- **Registers + boundary** — the calm primary vs. any loud/social register, and the
+  "never mix them" rule (link a separate social-voice skill if one exists).
+- **Tone-by-context matrix** — formality / energy / technical-depth per context
+  (marketing, docs, error, empty state…).
+- **UI copy rules** (so product text is on-brand by construction):
+  - Buttons: action verb, specific ("Create project"), no period, no "!".
+  - Errors: what happened → why (if useful) → what to do next. No "Oops/Sorry".
+  - Empty states: what goes here + the action to fill it.
+  - Active voice; drop "please"; be specific ("3 errors" not "some errors").
+  - Dashes: hyphen for compounds/ranges, em-dash for interruption; sentence case
+    for body, title case for headings; no ALL-CAPS except acronyms.
+- **Strictness** — read `.claude/<brand>-brand.local.md` for `strictness: strict |
+  balanced | flexible` and `always-explain`. On conflict between a request and the
+  guidelines, explain the tradeoff and default to adapting with a note (unless strict).
+
+Persist generated guidelines at `.claude/<brand>-brand-guidelines.md` (archive any
+prior version to `…-YYYY-MM-DD.md`). An enforcement pass loads them and, when
+`always-explain`, notes which rules it applied.
+
+## Optional: a brand-enforcement hook
+
+Ship `hooks/enforce.sh` and a `settings.json` snippet so the brand nudges itself in the
+repo — pick the lightest that fits:
+
+- **UserPromptSubmit** — inject a one-line reminder + the token file path when the
+  prompt touches UI/styles, so the agent has the palette in context.
+- **PostToolUse (Edit|Write)** — lint the touched file for **off-palette hex** (any
+  colour not in `tokens.json`) and **banned vocabulary**, and surface a warning (not a
+  hard block, unless `strictness: strict`).
+
+```jsonc
+// .claude/settings.json (merge, don't overwrite)
+{ "hooks": { "PostToolUse": [ { "matcher": "Edit|Write",
+  "hooks": [ { "type": "command",
+    "command": ".claude/skills/<brand>-brand/hooks/enforce.sh" } ] } ] } }
+```
+Keep the hook dependency-free and fast; read the allowed values from `tokens.json` so it
+stays in sync with `brand.json`. Make it advisory by default — a brand hook that hard-
+blocks edits gets disabled.
+
+## Template
+
+`{{brand}}` is whoever the brand belongs to — a company, a product, or you. Fill the
+`{{…}}` (most come straight from `brand.json`) and delete what doesn't apply.
 
 ````markdown
 ---
 name: {{brand-slug}}-brand
 description: >-
   {{Brand}}'s brand system for agentic coding — colours, typography, logo usage,
-  and voice. Use when building or editing {{Brand}}'s product, site, emails, or
-  collateral, or when the user says "apply {{Brand}} brand", "make this on-brand",
-  "{{Brand}} colours/fonts/tokens", or "style this like {{Brand}}".
-metadata:
-  surface: engineering
-  version: 1.0.0
+  voice. Use when building or editing {{Brand}}'s product, site, emails, or collateral,
+  or when the user says "apply {{Brand}} brand", "make this on-brand", "{{Brand}}
+  colours/fonts/tokens", or "style this like {{Brand}}".
+metadata: { surface: engineering, version: 1.0.0 }
 ---
 
 # {{Brand}} Brand
 
-{{One line: what {{Brand}} is + the palette in a sentence, e.g. "charcoal on white,
-one loud coral".}} The full reference is the brand book (`{{path/to}}.pdf`); this skill
-is how it lands in code.
+{{one line: what {{Brand}} is + the palette in a sentence}}. Source of truth:
+`brand.json`. Tokens: `tokens.css` / `tokens.json`. Book: `{{path}}.pdf|.html`.
 
 ## Tokens
-
-CSS custom properties (paste into `:root`):
-```css
-:root{
-  --font-sans:{{Family}}; --font-mono:{{Mono}};
-  --color-paper:{{#fff}};   /* ground */
-  --color-mist:{{#..}};     /* panels/tiles */
-  --color-line:{{#..}};     /* hairlines */
-  --color-graphite:{{#..}}; /* captions */
-  --color-ink:{{#..}};      /* text, marks */
-  --color-accent:{{#..}};   /* ONE accent, once per view */
-}
-```
-Tailwind v4 (`@theme`):
-```css
-@theme{
-  --font-sans:{{Family}}; --color-ink:{{#..}}; --color-accent:{{#..}}; /* ...rest... */
-}
-```
+Use `tokens.css` (`:root` + Tailwind `@theme`). Roles: `--color-paper` (ground),
+`--color-ink` (text/marks), `--color-graphite` (secondary), `--color-line` (dividers),
+`--color-mist` (panels), `--color-accent` (ONE spotlight — a fill; `--color-accent-text`
+for accent-coloured type on white).
 
 ## Applying in code
-- Ground `--color-paper`; text `--color-ink`; secondary text `--color-graphite`;
-  hairlines/dividers `--color-line`; panels `--color-mist`.
-- **Accent once per view.** {{--color-accent}} is a spotlight (one CTA, one active
-  state, one highlight) — never a section background or a second text colour.
-- Type: `--font-sans` for UI/headings/body, `--font-mono` for labels, code, metadata.
-  Tight tracking on large headings, +0.12em on small uppercase labels.
-- Radius {{--radius-*}}; base spacing {{unit}}.
+- New surfaces: use the role tokens directly; accent **once per view**.
+- Existing codebase: map its tokens to these roles **by usage evidence**, not by value;
+  leave ambiguous tokens unmatched for review — never silently collapse or invent.
+- `--font-sans` for UI/headings/body, `--font-mono` for labels/code/metadata.
 
-## Logo usage  (assets/ ships the SVGs)
-- Default: **{{primary lockup}}** ({{wordmark-ink.svg}}). Symbol-only
-  ({{mark-ink.svg}}) only where the name is already obvious (favicon, avatar).
-- On dark or accent grounds use the **-white** variant. Never grey-on-grey.
-- Clear space ≥ {{1 mark-height}} all sides. Minimum {{24px}}.
-- Never: recolour off-palette, stretch/squash, rotate, outline, add effects, crowd.
+## Logo & mascot ( assets/ )
+Default {{wordmark-ink.svg}}; symbol-only {{head-ink.svg}} where the name is obvious.
+`-white` on dark/accent. Clear space ≥ {{1 mark-height}}, min {{24px}}. Never recolour,
+stretch, rotate, outline, add effects, or crowd.
 
 ## Voice & tone
-- **{{Primary register}}** (site/product/docs): {{plain, declarative, calm}}.
-  e.g. "{{calm sample}}".
-- {{**Secondary register** (social) if any: {{deadpan/technical}}. e.g. "{{sample}}".
-  Boundary: never mix them — {{a joke on the landing page reads as a bug}}. See
-  {{[[brand-social-voice]]}}.}}
+We Are: {{…}} · We Are Not: {{…}}. Use: {{words}} · Avoid: {{words}}.
+- {{Primary register}} (site/product/docs): {{calm, declarative}} — "{{sample}}".
+- {{Social register if any}} — see {{[[brand-social-voice]]}}; never mix registers.
+UI copy: action-verb buttons, no "!"; errors say what/why/next; active voice; specific.
 
 ## Accessibility
-- {{--color-ink}} on {{--color-paper}} ≈ {{ratio}} (AAA). Passing pairs: {{list}}.
-- {{--color-accent}} is a **fill**, not white-text-on-accent, and fails as small text
-  on white — use {{#darker}} for accent-coloured type.
+{{ink}} on {{paper}} ≈ {{ratio}} (AAA). {{accent}} is a fill — use {{accentText}} for
+accent-coloured text on white.
 
-## Updating the brand
-- Change token **values**, never names — a rebrand is a value swap.
-- Regenerate marks with the `brand-book` skill's `scripts/svgkit.py` (extract /
-  recolor / slice-row); keep `assets/` and the book in sync.
-- Do not introduce a second accent. If a new colour is truly needed, pull it from the
-  same scene and demote it to a semantic state (success/warning), not a brand accent.
+## Updating
+Edit `brand.json` values (never role names) → regenerate `tokens.*` + marks (svgkit) →
+keep book + skill in sync → no second accent (new colour = a semantic state only).
 ````
 
-After writing it, tell the user the skill exists and how to invoke it
-(`/{{brand-slug}}-brand`), and that it lives with the brand's repo so it ships with
-the code.
+After writing it, tell the user how to invoke it (`/{{brand-slug}}-brand`) and that it
+ships with the code.

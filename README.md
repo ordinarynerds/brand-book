@@ -20,9 +20,20 @@ assumes a client relationship.
    /Illustration · Typography (specimen + hierarchy) · Colour (palette + neutrals +
    accessibility) · Voice & Tone · Applications. Fonts and SVGs are inlined, so the
    one HTML file is fully portable and prints one-spread-per-page.
-2. **A companion `<brand>-brand` skill** — tokens, logo/mascot usage, voice, and the
-   real SVG assets, packaged so a coding agent keeps the product on-brand and can
-   update the brand safely.
+2. **A companion `<brand>-brand` skill** — real token files (`tokens.css`/`tokens.json`),
+   logo/mascot usage, an *enforceable* voice (We-Are/We-Are-Not, vocabulary, UI-copy
+   rules), the SVG assets, and an optional advisory **enforcement hook** — so a coding
+   agent keeps the product on-brand and can update the brand safely.
+
+### One source of truth
+
+Both deliverables derive from a single machine-readable **`brand.json`** — colours as
+semantic roles (+ OKLCH), typography, logo/mascot, voice, layout. Author it once at
+intake (by **measuring a live site** — resolving the seven colour roles by frequency,
+harvesting fonts/logo — or from a structured brief), and generate the book, the
+companion skill, and the token files from it, so they can't drift. Never guess values
+from memory: an unguided model regresses to the mean (Inter, an indigo accent, a purple
+gradient), which is off-brand for everyone.
 
 ## Requirements
 
@@ -60,16 +71,24 @@ the companion skill.
 ```
 SKILL.md                     the workflow + the taste rules
 references/
+  brand-json.md              the brand.json source-of-truth schema (everything derives)
+  intake.md                  measure a live site or take a brief -> brand.json
   spread-map.md              the 11 spreads, shared chrome, layout & copy (neutral)
   build-html.md              render as a self-contained HTML artifact (default)
   build-paper.md             render on the Paper canvas (optional)
-  design-system.md           design tokens, type scale, review checklist
+  design-system.md           tokens, semantic colour roles, oklch, review checklist
   asset-pipeline.md          svgkit recipes + placement per medium
-  companion-skill.md         how to emit the <brand>-brand companion skill (+template)
+  companion-skill.md         emit the <brand>-brand skill: tokens, enforceable voice, hook
 scripts/
   svgkit.py                  stdlib SVG toolkit (below)
+  gen_tokens.py              brand.json -> tokens.css (+ Tailwind @theme) + tokens.json
   embed_assets.py            inline local imgs/fonts as data URIs -> self-contained HTML
 ```
+
+Method distilled from the best of the ecosystem's brand skills — measured extraction
+and a machine-readable kit (open-design), real token files (extract-design-system),
+a two-register enforceable voice (Sentry, Anthropic brand-voice), and evidence-based
+token-role mapping for existing codebases (open-design token-map).
 
 ### svgkit
 

@@ -12,7 +12,7 @@ description: >-
 metadata:
   origin: local
   surface: design + engineering
-  version: 2.0.0
+  version: 3.0.0
 ---
 
 # Brand Book Builder
@@ -35,6 +35,11 @@ here assumes a client relationship.
 Deliverable #2 is not optional. A brand book nobody can operationalize is a PDF that
 rots. The skill is how the brand stays alive in the product.
 
+**Both deliverables derive from one file: `brand.json`** — a machine-readable spec of
+the whole brand (colours as semantic roles + oklch, type, logo/mascot, voice, layout).
+Author it once at intake; generate the book, the companion skill, and the token files
+from it so they can't drift. Schema: `references/brand-json.md`.
+
 ## Pick a render target
 
 | | **HTML artifact** (default) | **Paper** (optional) |
@@ -50,10 +55,12 @@ unless the user asks for Paper.
 
 ## Workflow
 
-1. **Intake & brief.** Gather the brand's assets (logo/wordmark SVG, any mascot,
-   colours, fonts, voice). Post a short brief to the user — mood/register, palette
-   with roles + hex, type + scale, the spread list — and get a nod before building.
-   If the brand is already defined, the brief just restates it.
+1. **Intake → `brand.json`.** Either **measure a live site** (drive a browser; resolve
+   the seven colour roles by frequency, harvest fonts/logo/imagery — never guess from
+   memory) or take a **structured brief**. Score confidence and raise **open questions**
+   (never dead-end on ambiguity — recommend an answer so the user can confirm/override).
+   Post the brief for sign-off, then write `brand.json`. Full method:
+   `references/intake.md`.
 
 2. **Assets.** Normalize the marks with `scripts/svgkit.py` — extract the symbol out
    of the wordmark, unify inks, emit ink/white/accent variants, slice any mascot/icon
@@ -61,9 +68,10 @@ unless the user asks for Paper.
    `references/asset-pipeline.md`. **Persist assets into the companion skill's
    `assets/` dir** — never leave them only in a temp scratchpad.
 
-3. **Design tokens.** Define the token set once (colours with roles, fonts,
-   type/weight/tracking/leading scales, radius, spacing): `references/design-system.md`.
-   In HTML they're CSS custom properties on `:root`; in Paper they're file tokens.
+3. **Design tokens (generated from `brand.json`).** Emit the token set — colours as
+   semantic roles (+oklch), fonts, type/weight/tracking scales, radius, spacing:
+   `references/design-system.md`. In HTML they're `:root` custom properties (+ a real
+   `tokens.css`/`tokens.json` in the companion skill); in Paper they're file tokens.
 
 4. **Build the spreads.** 11 landscape spreads (1440×900), same content either way
    (`references/spread-map.md`). Then follow your render target:
@@ -90,6 +98,10 @@ unless the user asks for Paper.
   approved logos before using anything. (A wrong outline mark slipped through once.)
 - **Measure, don't eyeball, and don't rasterize to measure.** `svgkit` reads the
   vector; thumbnailers lie (they square the canvas and blacken transparency).
+- **Values are measured or chosen, never recalled.** Colours and fonts come from a live
+  site or the brief — not memory. An unguided LLM regresses to the mean (Inter, an
+  indigo accent, a purple gradient), which is off-brand for everyone. Mark inferred
+  values, and turn ambiguity into an open question, not a silent guess.
 - **Pure white ground for a high-chroma accent.** A saturated accent (coral, cobalt,
   cadmium) wants `#FFFFFF`, not a tinted cream.
 - **Self-contained output (HTML).** A brand book is meant to travel — inline the fonts
@@ -106,6 +118,10 @@ unless the user asks for Paper.
 
 ## Reference files
 
+- `references/brand-json.md` — **the `brand.json` source-of-truth schema** everything
+  derives from.
+- `references/intake.md` — measure a live site or take a structured brief → `brand.json`
+  (confidence + open questions).
 - `references/spread-map.md` — the 11 spreads, shared chrome, per-spread layout & copy
   (medium-neutral).
 - `references/build-html.md` — render as a self-contained HTML artifact (**default**).

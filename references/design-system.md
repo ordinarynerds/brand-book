@@ -32,7 +32,23 @@ semantically: neutrals light→dark, then primary (ink), then accent last.
 
 Name tokens by **role**, not hue — `--color-ink` / `--color-accent`, so a rebrand is
 a value change, not a rename. The companion skill re-exports this exact set
-(`references/companion-skill.md`).
+(`references/companion-skill.md`), generated from `brand.json` (`brand-json.md`).
+
+## Colour: roles, oklch, print
+
+- The palette is **seven semantic roles** (from `brand.json`): background, surface,
+  border, muted, foreground, accent (+ optional accent-secondary as a semantic state
+  only). They map 1:1 to our tokens — background→`--color-paper`, surface→`--color-mist`,
+  border→`--color-line`, muted→`--color-graphite`, foreground→`--color-ink`,
+  accent→`--color-accent`; keep `--color-slate` as a light neutral if the ramp needs it.
+- Carry **oklch** next to every hex (enables tints and programmatic light/dark).
+- For any colour used in print, also record **CMYK** (and Pantone if the brand has one)
+  on the Colour spread — screen hex ≠ press output.
+
+## Iconography (if the brand uses an icon set)
+
+Note the system on the Logo or a dedicated spread: source/family, stroke width, grid
+size, corner radius, and fill vs. outline — so product icons stay on-system.
 
 ## Type
 
