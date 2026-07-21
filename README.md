@@ -1,46 +1,62 @@
 # brand-book
 
-An agent skill that builds a full **brand guidelines document** ("brand book") and
-ships it with a matching **agent-usable brand skill** — so the brand doesn't just live
-in a PDF, it stays enforceable in code.
+**An agent skill that turns a brand's raw assets into a real brand guidelines book —
+and a skill that keeps that brand enforced in code.**
 
-Default output is a **single self-contained HTML file** — open it anywhere, print it
-to PDF, or publish it as a live Claude Artifact. No design app required. (If you have
-[Paper](https://paper.design) and want an editable canvas, there's an optional path
-for that too.)
+Give it a logo (and maybe a mascot), some colours, fonts, and a sense of voice. It
+produces two things:
+
+1. **The brand book** — an 11-spread, Swiss-editorial guidelines document. Default
+   output is a **single self-contained HTML file**: open it anywhere, print it to PDF,
+   or publish it as a live Claude Artifact. No design app required. *(Optional Paper
+   canvas path if you want to hand-edit.)*
+2. **A companion `<brand>-brand` skill** — real token files, an enforceable voice, the
+   SVG assets, and an optional lint hook, so a coding agent keeps the product on-brand.
 
 Built by [Ordinary Nerds](https://ordinarynerds.com). Works with Claude Code (or any
-agent that can load skills). The brand can be your own or a client's — nothing here
+agent that loads skills). The brand can be your own or a client's — nothing here
 assumes a client relationship.
 
-## Two deliverables, every time
+---
 
-1. **The brand book** — 11 landscape spreads (1440×900), Swiss-editorial:
-   Introduction · Logo System (symbol construction, lockups, do's & don'ts) · Mascot
-   /Illustration · Typography (specimen + hierarchy) · Colour (palette + neutrals +
-   accessibility) · Voice & Tone · Applications. Fonts and SVGs are inlined, so the
-   one HTML file is fully portable and prints one-spread-per-page.
-2. **A companion `<brand>-brand` skill** — real token files (`tokens.css`/`tokens.json`),
-   logo/mascot usage, an *enforceable* voice (We-Are/We-Are-Not, vocabulary, UI-copy
-   rules), the SVG assets, and an optional advisory **enforcement hook** — so a coding
-   agent keeps the product on-brand and can update the brand safely.
+## Table of contents
 
-### One source of truth
+- [Why](#why)
+- [Install](#install)
+- [Use](#use)
+- [How it works](#how-it-works)
+- [`brand.json` — the source of truth](#brandjson--the-source-of-truth)
+- [The book: 11 spreads](#the-book-11-spreads)
+- [Rendering: HTML (default) or Paper](#rendering-html-default-or-paper)
+- [The companion `<brand>-brand` skill](#the-companion-brand-brand-skill)
+- [The enforcement hook](#the-enforcement-hook)
+- [Scripts](#scripts)
+- [Design principles it enforces](#design-principles-it-enforces)
+- [Repo layout](#repo-layout)
+- [Prior art](#prior-art)
+- [License](#license)
 
-Both deliverables derive from a single machine-readable **`brand.json`** — colours as
-semantic roles (+ OKLCH), typography, logo/mascot, voice, layout. Author it once at
-intake (by **measuring a live site** — resolving the seven colour roles by frequency,
-harvesting fonts/logo — or from a structured brief), and generate the book, the
-companion skill, and the token files from it, so they can't drift. Never guess values
-from memory: an unguided model regresses to the mean (Inter, an indigo accent, a purple
-gradient), which is off-brand for everyone.
+---
 
-## Requirements
+## Why
 
-- An agent that supports skills (e.g. Claude Code).
-- `python3` for the scripts (standard library only — no dependencies).
-- **HTML target:** just a browser. **Paper target (optional):** the Paper desktop app
-  + its MCP server.
+Most "brand guidelines" fail one of two ways: they live in a design app almost nobody
+has, or they're a PDF that rots the moment the product ships. This skill fixes both.
+
+- **One source of truth.** Everything derives from a single machine-readable
+  [`brand.json`](#brandjson--the-source-of-truth) — colours as semantic roles, type,
+  logo, voice, layout. The book, the companion skill, and the token files are all
+  *generated* from it, so they can't drift.
+- **Measured, not guessed.** If the brand has a live site, the skill **measures** it
+  (ranks the real colours, reads the real fonts) instead of hallucinating. Left alone,
+  a model regresses to the mean — Inter, an indigo accent, a purple gradient — which is
+  off-brand for everyone.
+- **Self-contained.** The HTML book inlines its fonts and SVGs. No design tool, no CDN,
+  no broken links. It opens offline and prints to PDF.
+- **Operational.** The companion skill ships real `tokens.css`/`tokens.json`, an
+  enforceable voice, and an optional hook that warns when an edit drifts off-brand.
+
+---
 
 ## Install
 
@@ -52,6 +68,12 @@ npx skills add ordinarynerds/brand-book
 
 Or copy this folder into your project (or `~`) at `.claude/skills/brand-book/`.
 
+**Requirements:** an agent that supports skills (e.g. Claude Code) and `python3` for the
+scripts (standard library only — no dependencies). The HTML target needs only a browser;
+the optional Paper target needs the Paper desktop app + its MCP server.
+
+---
+
 ## Use
 
 In Claude Code:
@@ -60,70 +82,275 @@ In Claude Code:
 /brand-book
 ```
 
-…or just ask to "turn these brand assets into guidelines" / "make a brand book and a
-brand skill for <brand>". Have the brand's logo/mascot (SVG is best), colours, fonts,
-and a sense of voice ready. The skill posts a design brief for sign-off, builds
-spread-by-spread with self-review, produces the HTML (or Paper) book, and generates
-the companion skill.
+…or just ask: *"turn these brand assets into guidelines,"* *"make a brand book and a
+brand skill for Acme."* Have the brand's logo/mascot (SVG is best), colours, fonts, and
+a sense of voice ready — or just point it at the brand's website and let it measure.
 
-## What's inside
+The skill will: post a **design brief** for your sign-off → normalize the assets → write
+`brand.json` → build the book spread by spread (screenshotting to self-review) → produce
+the HTML (or Paper) book → generate the companion `<brand>-brand` skill.
+
+---
+
+## How it works
+
+```
+          ┌──────────── intake ────────────┐
+   live site  ──measure──▶                  │
+   or brief   ──────────▶   brand.json  ◀── the single source of truth
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        ▼                        ▼                         ▼
+   the book (HTML/Paper)   tokens.css / tokens.json   companion <brand>-brand skill
+   11 spreads, print-ready   (+ Tailwind @theme)      voice · logo rules · enforce hook
+```
+
+1. **Intake → `brand.json`.** Measure a live site (resolve the seven colour roles by
+   frequency, harvest fonts/logo/imagery) or take a structured brief. Score confidence
+   and raise **open questions** for anything ambiguous — a recommendation to confirm or
+   override, never a dead end. See [`references/intake.md`](references/intake.md).
+2. **Assets.** Normalize the marks with [`svgkit`](#scripts): extract the symbol out of
+   the wordmark, unify inks, emit ink/white/accent variants, slice a mascot sprite row
+   into tight uniform slices.
+3. **Tokens.** Generate `tokens.css` + `tokens.json` from `brand.json` with
+   [`gen_tokens`](#scripts).
+4. **Build.** 11 landscape spreads (1440×900), same content either way — [HTML
+   (default)](references/build-html.md) or [Paper (optional)](references/build-paper.md).
+   Built incrementally with a self-review checklist after each spread.
+5. **Review & export.** Reconcile cross-spread consistency (page numbers, clear-space,
+   tagline). HTML prints to PDF or publishes as an Artifact; Paper exports a PDF.
+6. **Companion skill.** Emit `<brand>-brand/` (usually in the brand's own repo) so the
+   book becomes enforceable in code.
+
+---
+
+## `brand.json` — the source of truth
+
+The whole brand in one machine-readable file. Author it once; generate everything from
+it. Full schema and rules: [`references/brand-json.md`](references/brand-json.md).
+
+Colours are **seven semantic roles** (`background`, `surface`, `border`, `muted`,
+`foreground`, `accent`, optional `accent-secondary`) with **hex + OKLCH** (and CMYK/
+Pantone for print). Naming by role, not hue, means a rebrand is a value change, not a
+rename.
+
+```jsonc
+{
+  "name": "Acme",
+  "tagline": "…", "mission": "…", "values": ["…"], "audience": "…",
+  "colors": [
+    { "role":"background","hex":"#FFFFFF","oklch":"oklch(100% 0 0)","name":"Paper","usage":"ground" },
+    { "role":"foreground","hex":"#141413","oklch":"oklch(17% .005 90)","name":"Ink","usage":"text, marks" },
+    { "role":"accent","hex":"#D97757","oklch":"oklch(67% .13 40)","name":"Clay","usage":"one moment per view (FILL)","accentText":"#B85C3E" }
+    // …surface, border, muted…
+  ],
+  "typography": { "display": {…}, "body": {…}, "mono": {…}, "scale": {…} },
+  "logo": { "primary":"assets/wordmark.svg","symbol":"assets/mark.svg","clearSpace":"1 mark-height","minSize":"24px","donts":[…] },
+  "voice": { "weAre":[…], "weAreNot":[…], "vocabulary": {"use":[…],"avoid":[…]}, "registers":[…] },
+  "layout": { "radius": {…}, "spacingBase":"8px" }
+}
+```
+
+Rule: **never invent colours from memory.** Each value is measured or chosen; derive a
+missing role from a measured one with `oklch()` and say so; mark inferred values.
+
+---
+
+## The book: 11 spreads
+
+11 landscape spreads (1440×900) sharing a mono running-head + footer. Full layout & copy
+per spread: [`references/spread-map.md`](references/spread-map.md).
+
+| # | Section | Spread |
+|---|---------|--------|
+| 01 | Introduction | What is `<Brand>`? — manifesto lead + hero mark |
+| 02 | Introduction | Brand Principles (from `values`) |
+| 03 | Logo System | Symbol Concept — the mark on a construction grid |
+| 04 | Logo System | Logo Overview — lockups + reversal |
+| 05 | Logo System | Do's & Don'ts — misuse grid + clear space + min size |
+| 06 | Mascot / Illustration | The set (drop if the brand has no mascot) |
+| 07 | Typography | Typeface — specimen + weight ladder |
+| 08 | Typography | Hierarchy — the type scale |
+| 09 | Colour System | Core palette + neutral ramp + usage/accessibility |
+| 10 | Voice & Tone | Register(s) + the boundary rule + examples |
+| 11 | Applications | Real collateral — banner, avatar, card, sticker |
+
+Optional additions when the brand has them: Mission/Vision/Audience, print CMYK/Pantone,
+iconography, social sizes, a quick-reference card.
+
+---
+
+## Rendering: HTML (default) or Paper
+
+|  | **HTML artifact** (default) | **Paper** (optional) |
+|---|---|---|
+| Needs | a browser | Paper desktop + its MCP |
+| Output | one `.html` → Artifact / print-to-PDF | editable canvas → PDF export |
+| Best for | most people, sharing a link, agentic pipelines | hand-editing on a canvas |
+| Guide | [`references/build-html.md`](references/build-html.md) | [`references/build-paper.md`](references/build-paper.md) |
+
+The HTML build is one self-contained file: tokens as `:root` custom properties, each
+spread a real 1440×900 page that scales to any viewport and prints one-per-page, **fonts
+inlined as `@font-face` data URIs** (the Artifact CSP blocks font CDNs), and every SVG
+embedded. Author with relative paths, then run [`embed_assets`](#scripts) to inline
+everything into a portable file.
+
+A brand book is legitimately **single-theme paper** — it commits to a white-paper world
+and sits the spreads on a neutral gallery ground, rather than shipping a half-baked dark
+mode.
+
+---
+
+## The companion `<brand>-brand` skill
+
+The operational half of the deliverable. Generated from `brand.json` and dropped into the
+brand's own repo at `.claude/skills/<brand>-brand/`. Full spec + template:
+[`references/companion-skill.md`](references/companion-skill.md).
+
+```
+<brand>-brand/
+  SKILL.md          human-readable index
+  brand.json        the source of truth
+  tokens.css        :root { --color-<role> … } + Tailwind @theme
+  tokens.json       { color, font, text, radius, spacing }
+  assets/           the real, final SVGs (durable home for the marks)
+  hooks/enforce.sh  optional advisory brand-lint hook
+```
+
+It gives a coding agent:
+
+- **Tokens** by role (`--color-paper`, `--color-ink`, `--color-accent`…), with the
+  accent-once rule restated for UI.
+- **Applying in code** for a new surface *or* an existing codebase — mapping the repo's
+  tokens onto the brand roles **by usage evidence, not by value**, and leaving ambiguous
+  ones for human review (never silently collapsing or inventing a token).
+- **Logo & mascot usage** — which asset where, clear space, min size, the don'ts.
+- **An enforceable voice** — a **We Are / We Are Not** table, vocabulary to use/avoid, the
+  register boundary, and concrete **UI-copy rules** (action-verb buttons, errors that say
+  what → why → next, active voice, dash/case conventions).
+- **Accessibility** — the passing text/background pairs and the accent-as-text fallback.
+
+---
+
+## The enforcement hook
+
+Every companion skill can ship `hooks/enforce.sh` — an **advisory** Claude Code
+`PostToolUse` hook. On every Edit/Write it lints the touched file for **off-palette
+colours** (any hex not in `tokens.json`) and **off-brand vocabulary** (from
+`brand.json`'s `voice.vocabulary.avoid`). It reads both from the token files, so it can't
+drift from the brand.
+
+Wire it up by merging into `.claude/settings.json` (don't overwrite):
+
+```jsonc
+{ "hooks": { "PostToolUse": [ { "matcher": "Edit|Write",
+  "hooks": [ { "type": "command",
+    "command": "\"$CLAUDE_PROJECT_DIR/.claude/skills/<brand>-brand/hooks/enforce.sh\"" } ] } ] } }
+```
+
+Example output when an edit drifts:
+
+```
+[Acme brand] pricing.css:
+  - off-palette colour #7A5CFF — use a --color-* token
+  - off-brand word "supercharge" — see brand.json voice.vocabulary.avoid
+```
+
+Advisory by default (warns, never blocks). Set `ON_BRAND_STRICT=1` to make it block
+(exit 2) instead. Dependency-free (bash + `python3`).
+
+---
+
+## Scripts
+
+All stdlib Python, no dependencies.
+
+### `svgkit.py` — measure and cut brand SVGs
+
+Brand SVGs carry absolute coordinates and inconsistent inks; naive slicing leaves uneven
+margins. `svgkit` reads the **vector path data** (never rasterize to measure —
+thumbnailers square the canvas and blacken transparency).
+
+```bash
+svgkit clusters  row.svg                          # detect glyphs in a sprite row
+svgkit slice-row row.svg --out ./o --name face    # tight, common-height slices + display widths
+svgkit extract   wordmark.svg --out mark.svg --pick left   # pull the symbol out of a lockup
+svgkit tight     mark.svg --out mark.svg           # crop the viewBox to the drawing
+svgkit recolor   mark.svg --out mark-white.svg --map "#141413=#FFFFFF"
+```
+
+### `gen_tokens.py` — brand.json → token files
+
+```bash
+gen_tokens.py brand.json --out-dir .   # writes tokens.css (:root + @theme) + tokens.json
+gen_tokens.py brand.json --print       # print the CSS to stdout
+```
+
+### `embed_assets.py` — make an HTML file self-contained
+
+Inlines local `<img src>`, CSS `url()`, and `@font-face` as data URIs — required for
+Artifacts, handy everywhere.
+
+```bash
+embed_assets.py book.src.html --out book.html
+```
+
+---
+
+## Design principles it enforces
+
+- **One accent, used once per view** — monochrome ink-on-paper is the ground; the accent
+  is a spotlight, not a wash.
+- **Extract the real mark** — the symbol usually lives *inside* the wordmark; don't grab
+  a look-alike file.
+- **Values are measured or chosen, never recalled** — colours/fonts from a live site or
+  the brief, not memory.
+- **Pure-white ground for a high-chroma accent**; a brand book is single-theme paper.
+- **Calm, declarative book copy** — a separate loud/social voice is *documented*, never
+  used to write the book.
+- **Accessibility is a rule** — state the passing contrast pairs; ship a darker text-only
+  variant when the accent fails as small text on white.
+
+---
+
+## Repo layout
 
 ```
 SKILL.md                     the workflow + the taste rules
 references/
-  brand-json.md              the brand.json source-of-truth schema (everything derives)
+  brand-json.md              the brand.json source-of-truth schema
   intake.md                  measure a live site or take a brief -> brand.json
   spread-map.md              the 11 spreads, shared chrome, layout & copy (neutral)
   build-html.md              render as a self-contained HTML artifact (default)
   build-paper.md             render on the Paper canvas (optional)
   design-system.md           tokens, semantic colour roles, oklch, review checklist
   asset-pipeline.md          svgkit recipes + placement per medium
-  companion-skill.md         emit the <brand>-brand skill: tokens, enforceable voice, hook
+  companion-skill.md         emit the <brand>-brand skill: tokens, voice, hook (+template)
 scripts/
-  svgkit.py                  stdlib SVG toolkit (below)
+  svgkit.py                  SVG toolkit: clusters / slice-row / extract / tight / recolor
   gen_tokens.py              brand.json -> tokens.css (+ Tailwind @theme) + tokens.json
   embed_assets.py            inline local imgs/fonts as data URIs -> self-contained HTML
 ```
 
-Method distilled from the best of the ecosystem's brand skills — measured extraction
-and a machine-readable kit (open-design), real token files (extract-design-system),
-a two-register enforceable voice (Sentry, Anthropic brand-voice), and evidence-based
-token-role mapping for existing codebases (open-design token-map).
+---
 
-### svgkit
+## Prior art
 
-Brand SVGs carry absolute coordinates and inconsistent inks; naive slicing leaves
-uneven margins. `svgkit` measures the real geometry from the vector path data (never
-rasterize to measure — thumbnailers square the canvas and blacken transparency).
+Method distilled from the best of the open agent-skills ecosystem, with thanks:
 
-```bash
-svgkit clusters  row.svg                          # detect glyphs in a sprite row
-svgkit slice-row row.svg --out ./o --name face    # tight, common-height slices + widths
-svgkit extract   wordmark.svg --out mark.svg --pick left   # pull the symbol out of a lockup
-svgkit tight     mark.svg --out mark.svg           # crop viewBox to the drawing
-svgkit recolor   mark.svg --out mark-white.svg --map "#38353C=#FFFFFF"
-```
+- **[open-design](https://github.com/nexu-io/open-design)** — `brand-extract` (measure a
+  live site into a machine-readable kit; the seven colour roles) and `token-map`
+  (evidence-based token-role mapping for existing codebases).
+- **[extract-design-system](https://github.com/arvindrk/extract-design-system)** — ship
+  real `tokens.json` / `tokens.css`, not paste blocks.
+- **[getsentry/skills](https://github.com/getsentry/skills)** — a real company's
+  two-register voice with concrete UI-copy rules.
+- **[Anthropic brand-voice](https://github.com/anthropics/knowledge-work-plugins)** — the
+  "voice constant, tone flexes" model, We-Are/We-Are-Not, confidence + open questions.
+- **[claude-office-skills](https://github.com/claude-office-skills/skills)** — a thorough
+  guidelines section outline (audience, print values, iconography, quick reference).
 
-### embed_assets
-
-Turns a readable HTML file (relative `src=`/`url()` paths) into one self-contained
-document — required for Artifacts, handy everywhere.
-
-```bash
-embed_assets.py book.src.html --out book.html
-```
-
-## Design principles it enforces
-
-- One accent, used **once per view** — monochrome ink-on-paper is the ground.
-- Extract the **real** mark (usually inside the wordmark), don't grab a look-alike.
-- Pure-white ground for a high-chroma accent; a brand book is single-theme paper.
-- Self-contained output: inline the fonts (@font-face data URI — CDNs are CSP-blocked)
-  and the assets.
-- Calm, declarative book copy; a separate loud/social voice is *documented*, never
-  used to write the book.
-- Accessibility is a rule: state the passing contrast pairs; ship a darker text-only
-  variant when the accent fails as small text.
+---
 
 ## License
 
