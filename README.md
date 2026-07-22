@@ -24,7 +24,7 @@ This repo ships **two skills** that produce the same book, rendered differently:
 The content, `brand.json`, taste rules, and companion-skill output are identical — only
 the rendering differs. Reach for `brand-book-html` unless you specifically want Paper.
 
-Built by [Ordinary Nerds](https://ordinarynerds.com). Works with Claude Code (or any
+Built by [Ordinary Nerds](https://ordinarynerds.com?ref=brand-book). Works with Claude Code (or any
 agent that loads skills). The brand can be your own or a client's — nothing here
 assumes a client relationship.
 
@@ -384,4 +384,4 @@ Method distilled from the best of the open agent-skills ecosystem, with thanks:
 
 ## License
 
-[MIT](./LICENSE) © Ordinary Nerds
+[MIT](./LICENSE) © [Ordinary Nerds](https://ordinarynerds.com?ref=brand-book)
