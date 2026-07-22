@@ -43,7 +43,7 @@ white flex column.
 
 Reuse the chrome across all spreads — a shared class/partial in HTML, or duplicate the
 first artboard in Paper. Only the section label and page number change per spread. The
-mechanics live in your build reference (`build-html.md` / `build-paper.md`); this file
+mechanics live in your build reference (`build-paper.md`); this file
 is medium-neutral.
 
 ## Per-spread layout & copy

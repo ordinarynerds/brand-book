@@ -1,7 +1,7 @@
 # Build in Paper (optional)
 
 Only if the user has [Paper](https://paper.design) and wants an editable canvas.
-Otherwise use `build-html.md`. Content is identical (`spread-map.md`); this is just
+Otherwise use the `brand-book-html` skill. Content is identical (`spread-map.md`); this is just
 the canvas mechanics.
 
 Load the Paper guide first: `get_guide({ topic: "paper-mcp-instructions" })`. Confirm

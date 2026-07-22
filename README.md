@@ -6,12 +6,21 @@ and a skill that keeps that brand enforced in code.**
 Give it a logo (and maybe a mascot), some colours, fonts, and a sense of voice. It
 produces two things:
 
-1. **The brand book** — an 11-spread, Swiss-editorial guidelines document. Default
-   output is a **single self-contained HTML file**: open it anywhere, print it to PDF,
-   or publish it as a live Claude Artifact. No design app required. *(Optional Paper
-   canvas path if you want to hand-edit.)*
+1. **The brand book** — an 11-spread, Swiss-editorial guidelines document.
 2. **A companion `<brand>-brand` skill** — real token files, an enforceable voice, the
    SVG assets, and an optional lint hook, so a coding agent keeps the product on-brand.
+
+### Two skills — pick your render target
+
+This repo ships **two skills** that produce the same book, rendered differently:
+
+| Skill | Output | Needs | Use it when |
+|-------|--------|-------|-------------|
+| **`brand-book-html`** *(default)* | one self-contained HTML file — open anywhere, print to PDF, publish as a Claude Artifact | just a browser | almost always |
+| **`brand-book-paper`** | an editable [Paper](https://paper.design) design canvas → PDF | Paper desktop + its MCP | you want to hand-edit on a canvas |
+
+The content, `brand.json`, taste rules, and companion-skill output are identical — only
+the rendering differs. Reach for `brand-book-html` unless you specifically want Paper.
 
 Built by [Ordinary Nerds](https://ordinarynerds.com). Works with Claude Code (or any
 agent that loads skills). The brand can be your own or a client's — nothing here
@@ -27,7 +36,7 @@ assumes a client relationship.
 - [How it works](#how-it-works)
 - [`brand.json` — the source of truth](#brandjson--the-source-of-truth)
 - [The book: 11 spreads](#the-book-11-spreads)
-- [Rendering: HTML (default) or Paper](#rendering-html-default-or-paper)
+- [Rendering: two skills, one book](#rendering-two-skills-one-book)
 - [The companion `<brand>-brand` skill](#the-companion-brand-brand-skill)
 - [The enforcement hook](#the-enforcement-hook)
 - [Scripts](#scripts)
@@ -63,10 +72,12 @@ has, or they're a PDF that rots the moment the product ships. This skill fixes b
 With the [skills CLI](https://skills.sh):
 
 ```bash
-npx skills add ordinarynerds/brand-book
+npx skills add ordinarynerds/brand-book@brand-book-html    # the default
+npx skills add ordinarynerds/brand-book@brand-book-paper   # only if you use Paper
 ```
 
-Or copy this folder into your project (or `~`) at `.claude/skills/brand-book/`.
+Or copy the skill folder you want into your project (or `~`) at
+`.claude/skills/brand-book-html/` (or `…/brand-book-paper/`).
 
 **Requirements:** an agent that supports skills (e.g. Claude Code) and `python3` for the
 scripts (standard library only — no dependencies). The HTML target needs only a browser;
@@ -79,7 +90,7 @@ the optional Paper target needs the Paper desktop app + its MCP server.
 In Claude Code:
 
 ```
-/brand-book
+/brand-book-html      # or /brand-book-paper
 ```
 
 …or just ask: *"turn these brand assets into guidelines,"* *"make a brand book and a
@@ -108,14 +119,14 @@ the HTML (or Paper) book → generate the companion `<brand>-brand` skill.
 1. **Intake → `brand.json`.** Measure a live site (resolve the seven colour roles by
    frequency, harvest fonts/logo/imagery) or take a structured brief. Score confidence
    and raise **open questions** for anything ambiguous — a recommendation to confirm or
-   override, never a dead end. See [`references/intake.md`](references/intake.md).
+   override, never a dead end. See [`references/intake.md`](brand-book-html/references/intake.md).
 2. **Assets.** Normalize the marks with [`svgkit`](#scripts): extract the symbol out of
    the wordmark, unify inks, emit ink/white/accent variants, slice a mascot sprite row
    into tight uniform slices.
 3. **Tokens.** Generate `tokens.css` + `tokens.json` from `brand.json` with
    [`gen_tokens`](#scripts).
 4. **Build.** 11 landscape spreads (1440×900), same content either way — [HTML
-   (default)](references/build-html.md) or [Paper (optional)](references/build-paper.md).
+   (default)](brand-book-html/references/build-html.md) or [Paper (optional)](brand-book-paper/references/build-paper.md).
    Built incrementally with a self-review checklist after each spread.
 5. **Review & export.** Reconcile cross-spread consistency (page numbers, clear-space,
    tagline). HTML prints to PDF or publishes as an Artifact; Paper exports a PDF.
@@ -127,7 +138,7 @@ the HTML (or Paper) book → generate the companion `<brand>-brand` skill.
 ## `brand.json` — the source of truth
 
 The whole brand in one machine-readable file. Author it once; generate everything from
-it. Full schema and rules: [`references/brand-json.md`](references/brand-json.md).
+it. Full schema and rules: [`references/brand-json.md`](brand-book-html/references/brand-json.md).
 
 Colours are **seven semantic roles** (`background`, `surface`, `border`, `muted`,
 `foreground`, `accent`, optional `accent-secondary`) with **hex + OKLCH** (and CMYK/
@@ -159,7 +170,7 @@ missing role from a measured one with `oklch()` and say so; mark inferred values
 ## The book: 11 spreads
 
 11 landscape spreads (1440×900) sharing a mono running-head + footer. Full layout & copy
-per spread: [`references/spread-map.md`](references/spread-map.md).
+per spread: [`references/spread-map.md`](brand-book-html/references/spread-map.md).
 
 | # | Section | Spread |
 |---|---------|--------|
@@ -180,14 +191,20 @@ iconography, social sizes, a quick-reference card.
 
 ---
 
-## Rendering: HTML (default) or Paper
+## Rendering: two skills, one book
 
-|  | **HTML artifact** (default) | **Paper** (optional) |
+The two skills share everything except the render step:
+
+|  | **`brand-book-html`** (default) | **`brand-book-paper`** |
 |---|---|---|
 | Needs | a browser | Paper desktop + its MCP |
 | Output | one `.html` → Artifact / print-to-PDF | editable canvas → PDF export |
 | Best for | most people, sharing a link, agentic pipelines | hand-editing on a canvas |
-| Guide | [`references/build-html.md`](references/build-html.md) | [`references/build-paper.md`](references/build-paper.md) |
+| Build guide | [`brand-book-html/references/build-html.md`](brand-book-html/references/build-html.md) | [`brand-book-paper/references/build-paper.md`](brand-book-paper/references/build-paper.md) |
+
+Both carry the same `brand.json` schema, intake, spread map, design system, asset
+pipeline, companion-skill generator, and `svgkit`/`gen_tokens` scripts — so a book reads
+the same whichever you pick.
 
 The HTML build is one self-contained file: tokens as `:root` custom properties, each
 spread a real 1440×900 page that scales to any viewport and prints one-per-page, **fonts
@@ -205,7 +222,7 @@ mode.
 
 The operational half of the deliverable. Generated from `brand.json` and dropped into the
 brand's own repo at `.claude/skills/<brand>-brand/`. Full spec + template:
-[`references/companion-skill.md`](references/companion-skill.md).
+[`references/companion-skill.md`](brand-book-html/references/companion-skill.md).
 
 ```
 <brand>-brand/
@@ -315,21 +332,29 @@ embed_assets.py book.src.html --out book.html
 
 ## Repo layout
 
+Two self-contained skills. They share the reference set and the `svgkit`/`gen_tokens`
+scripts; only the build reference (and `embed_assets`, HTML-only) differ.
+
 ```
-SKILL.md                     the workflow + the taste rules
-references/
-  brand-json.md              the brand.json source-of-truth schema
-  intake.md                  measure a live site or take a brief -> brand.json
-  spread-map.md              the 11 spreads, shared chrome, layout & copy (neutral)
-  build-html.md              render as a self-contained HTML artifact (default)
-  build-paper.md             render on the Paper canvas (optional)
-  design-system.md           tokens, semantic colour roles, oklch, review checklist
-  asset-pipeline.md          svgkit recipes + placement per medium
-  companion-skill.md         emit the <brand>-brand skill: tokens, voice, hook (+template)
-scripts/
-  svgkit.py                  SVG toolkit: clusters / slice-row / extract / tight / recolor
-  gen_tokens.py              brand.json -> tokens.css (+ Tailwind @theme) + tokens.json
-  embed_assets.py            inline local imgs/fonts as data URIs -> self-contained HTML
+brand-book-html/               the default skill (portable HTML output)
+  SKILL.md                     the workflow + the taste rules
+  references/
+    brand-json.md              the brand.json source-of-truth schema
+    intake.md                  measure a live site or take a brief -> brand.json
+    spread-map.md              the 11 spreads, shared chrome, layout & copy
+    build-html.md              render as a self-contained HTML artifact
+    design-system.md           tokens, semantic colour roles, oklch, review checklist
+    asset-pipeline.md          svgkit recipes + placement
+    companion-skill.md         emit the <brand>-brand skill: tokens, voice, hook (+template)
+  scripts/
+    svgkit.py                  SVG toolkit: clusters / slice-row / extract / tight / recolor
+    gen_tokens.py              brand.json -> tokens.css (+ Tailwind @theme) + tokens.json
+    embed_assets.py            inline local imgs/fonts as data URIs -> self-contained HTML
+
+brand-book-paper/              the Paper-canvas skill
+  SKILL.md
+  references/                  (same set, with build-paper.md instead of build-html.md)
+  scripts/                     svgkit.py, gen_tokens.py
 ```
 
 ---

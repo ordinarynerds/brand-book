@@ -94,5 +94,5 @@ open('construction-grid.svg','w').write("\n".join(L))
 - **HTML** (`build-html.md`): inline the marks as `<svg>` or as
   `<img src="data:image/svg+xml;base64,…">`; author with relative paths and let
   `scripts/embed_assets.py` do the embedding.
-- **Paper** (`build-paper.md`): `<img src="paper-asset:///absolute/path.svg">` (three
+- **Paper** (the `brand-book-paper` skill): `<img src="paper-asset:///absolute/path.svg">` (three
   slashes + absolute path); swap a placed image with `write_html` `mode:"replace"`.
