@@ -1,5 +1,7 @@
 # brand-book
 
+![brand-book — your brand, as a book and as code](assets/brand-book.png)
+
 **An agent skill that turns a brand's raw assets into a real brand guidelines book —
 and a skill that keeps that brand enforced in code.**
 
@@ -105,15 +107,18 @@ the HTML (or Paper) book → generate the companion `<brand>-brand` skill.
 
 ## How it works
 
-```
-          ┌──────────── intake ────────────┐
-   live site  ──measure──▶                  │
-   or brief   ──────────▶   brand.json  ◀── the single source of truth
-                                 │
-        ┌────────────────────────┼────────────────────────┐
-        ▼                        ▼                         ▼
-   the book (HTML/Paper)   tokens.css / tokens.json   companion <brand>-brand skill
-   11 spreads, print-ready   (+ Tailwind @theme)      voice · logo rules · enforce hook
+```mermaid
+flowchart TD
+    S["live site<br/><i>or</i> a brief"] -->|measure / define| B["<b>brand.json</b><br/>the single source of truth"]
+    B --> BK["the book<br/>11 spreads · HTML or Paper"]
+    B --> TK["tokens.css / tokens.json<br/>+ Tailwind @theme"]
+    B --> CS["companion &lt;brand&gt;-brand skill<br/>voice · logo rules · enforce hook"]
+
+    classDef src fill:#F4F3F2,stroke:#E6E4E7,color:#38353C;
+    classDef truth fill:#38353C,stroke:#38353C,color:#FFFFFF;
+    classDef out fill:#FFFFFF,stroke:#E6E4E7,color:#38353C;
+    class S src; class B truth; class BK,TK,CS out;
+    linkStyle default stroke:#FF6B4A,stroke-width:1.5px;
 ```
 
 1. **Intake → `brand.json`.** Measure a live site (resolve the seven colour roles by
